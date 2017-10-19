@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">NotificationManagerTask</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="send_picture">Send picture</string>
+    <string name="send">Send</string>
+    <string name="cancel">Cancel</string>
+</resources>
