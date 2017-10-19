@@ -155,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     .setOngoing(true)
                     .setContentIntent(mainActivityPendingIntent)
                     .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent);
+            mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             mNotificationManager.notify(0, mFirstNotificationBuilder.build());
         } else {
             mFirstNotificationBuilder = new NotificationCompat.Builder(this);
