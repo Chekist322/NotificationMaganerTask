@@ -17,7 +17,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.text.Editable;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextWatcher;
+import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -326,11 +329,12 @@ public class MainActivity extends AppCompatActivity {
      */
     private void buildSecondNotification() {
         Date currentTime = Calendar.getInstance().getTime();
-        SimpleDateFormat sdf = new SimpleDateFormat("h:mm:ss a", Locale.ENGLISH);
-        String targetString = sdf.format(currentTime.getTime()) + ": " + mEditText.getText();
+        SimpleDateFormat sdf = new SimpleDateFormat("kk:mm:ss", Locale.ENGLISH);
+        String targetString = sdf.format(currentTime.getTime()) + " " + mEditText.getText();
+        Spannable spannable = new SpannableString(targetString);
+        spannable.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, 8, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         mSecondNotificationContent.add(targetString);
-
         Intent secondNotificationActivityIntent = new Intent(this, SecondNotificationActivity.class);
         secondNotificationActivityIntent.putExtra(SECOND_NOTIFICATION_CONTENT, mSecondNotificationContent);
         PendingIntent secondNotificationActivityPendingIntent = PendingIntent.getActivity(this, 0,
@@ -340,27 +344,28 @@ public class MainActivity extends AppCompatActivity {
         if (mSecondCheckBox.isChecked()) {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
                     .setContentTitle("Last message")
-                    .setContentText(targetString)
+                    .setContentText(spannable)
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setNumber(++mSecondNotificationMessagesCounter)
                     .setAutoCancel(true)
                     .setDefaults(Notification.DEFAULT_ALL);
+
             mInboxStyle.setSummaryText("more below spoiler...");
-            mInboxStyle.addLine(targetString);
+            mInboxStyle.addLine(spannable);
             if (mSecondNotificationMessagesCounter > 1) {
                 secondNotificationBuilder.setStyle(mInboxStyle);
             }
         } else {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
                     .setContentTitle("Last message")
-                    .setContentText(targetString)
+                    .setContentText(spannable)
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
                     .setNumber(++mSecondNotificationMessagesCounter);
             mInboxStyle.setSummaryText("more below spoiler...");
-            mInboxStyle.addLine(targetString);
+            mInboxStyle.addLine(spannable);
             if (mSecondNotificationMessagesCounter > 1) {
                 secondNotificationBuilder.setStyle(mInboxStyle);
             }

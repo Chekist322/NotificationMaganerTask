@@ -1,10 +1,15 @@
 package com.example.batrakov.notificationmanagertask;
 
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,7 +63,9 @@ public class SecondNotificationActivity extends AppCompatActivity {
          * @param aStr string from list
          */
         void bindView(String aStr) {
-            mField.setText(aStr);
+            Spannable spannable = new SpannableString(aStr);
+            spannable.setSpan(new StyleSpan(Typeface.BOLD), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            mField.setText(spannable);
         }
     }
 
