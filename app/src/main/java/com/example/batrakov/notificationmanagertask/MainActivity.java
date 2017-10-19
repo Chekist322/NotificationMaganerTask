@@ -1,5 +1,6 @@
 package com.example.batrakov.notificationmanagertask;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -7,9 +8,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v4.util.TimeUtils;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -20,6 +23,9 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,49 +33,58 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Main application activity. Represent main screen and utility views which control notifications.
+ * Control Notifications and AsyncTask that represent work shown in first Notification.
+ * Allow to start {@link SecondNotificationActivity} that represents list of second Notification messages.
+ * Download image from resources and save it to external storage for next manipulation by third Notification.
+ */
 public class MainActivity extends AppCompatActivity {
 
-    Button mFirstButton;
-    Button mSecondButton;
-    Button mThirdButton;
-    CheckBox mFirstCheckBox;
-    CheckBox mSecondCheckBox;
-    EditText mEditText;
-    NotificationCompat.Builder mFirstNotificationBuilder;
-    NotificationCompat.Builder mSecondNotificationBuilder;
-    NotificationCompat.Builder mThirdNotificationBuilder;
-    NotificationManager mNotificationManager;
-    ArrayList<String> mSecondNotificationContent;
-    static FirstNotificationTask mFirstNotificationTask;
-    NotificationCompat.InboxStyle mInboxStyle;
-    static int mSecondNotificationMessagesCounter;
+    private Button mFirstButton;
+    private Button mSecondButton;
+    private Button mThirdButton;
+    private CheckBox mFirstCheckBox;
+    private CheckBox mSecondCheckBox;
+    private EditText mEditText;
+    private NotificationCompat.Builder mFirstNotificationBuilder;
+    private File mImage;
+    private NotificationManager mNotificationManager;
+    private ArrayList<String> mSecondNotificationContent;
+    private FirstNotificationTask mFirstNotificationTask;
+    private NotificationCompat.InboxStyle mInboxStyle;
+    private int mSecondNotificationMessagesCounter;
+
+    /**
+     * Flag for transfer ArrayList of Strings between activities.
+     */
+    public static final String SECOND_NOTIFICATION_CONTENT = "second content";
 
     private static final String CANCEL_TASK = "cancel_task";
-    private static final String START_TASK = "start_task";
-    public static final String SECOND_NOTIFICATION_CONTENT = "second content";
-    private static final String SECOND_NOTIFICATION_CONTENT_INBOX = "second content inbox";
     private static final int FIRST_NOTIFICATION_ID = 0;
     private static final int SECOND_NOTIFICATION_ID = 1;
     private static final int THIRD_NOTIFICATION_ID = 2;
-
-    private static final String TASK_IS_NOT_ACTIVE_FIRST_NOTIFICATION = "new";
-    private static final String TASK_IS_ACTIVE_FIRST_NOTIFICATION = "update";
+    private static final int PERMISSION_REQUEST_CODE = 3;
+    private static final int COMPRESS_CONST = 100;
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        if (intent.getAction() != null) {
-            switch (intent.getAction()) {
-                case CANCEL_TASK:
-                    mFirstNotificationTask.cancel(false);
-                    mNotificationManager.cancel(FIRST_NOTIFICATION_ID);
+    protected void onCreate(Bundle aSavedInstanceState) {
+
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+
+        super.onCreate(aSavedInstanceState);
+        mImage = new File(Environment.getExternalStorageDirectory().toString(), "testNotificationImage.jpg");
+        if (!mImage.exists()) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.raw.kek);
+            try {
+                FileOutputStream fileOutputStream = new FileOutputStream(mImage);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, COMPRESS_CONST, fileOutputStream);
+            } catch (IOException aE) {
+                aE.printStackTrace();
             }
         }
-        super.onNewIntent(intent);
-    }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mInboxStyle = new NotificationCompat.InboxStyle();
         mSecondNotificationMessagesCounter = 0;
@@ -84,14 +99,13 @@ public class MainActivity extends AppCompatActivity {
         changeSecondNotificationAndButton();
         changeThirdNotificationAndButton();
         mEditText.addTextChangedListener(new TextWatcher() {
-
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            public void beforeTextChanged(CharSequence aCharSequence, int aStart, int aCount, int aAfter) {
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.toString().isEmpty()) {
+            public void onTextChanged(CharSequence aCharSequence, int aStart, int aBefore, int aCount) {
+                if (aCharSequence.toString().isEmpty()) {
                     mSecondButton.setEnabled(false);
                 } else {
                     mSecondButton.setEnabled(true);
@@ -99,54 +113,75 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
+            public void afterTextChanged(Editable aEditable) {
             }
         });
     }
 
+    @Override
+    protected void onNewIntent(Intent aIntent) {
+        if (aIntent.getAction() != null) {
+            switch (aIntent.getAction()) {
+                case CANCEL_TASK:
+                    mFirstNotificationTask.cancel(false);
+                    mNotificationManager.cancel(FIRST_NOTIFICATION_ID);
+                    break;
+                default:
+                    break;
+            }
+        }
+        super.onNewIntent(aIntent);
+    }
 
+    /**
+     * Build and update first depending on first CheckButton state.
+     * Set actions for buttons and launch it by NotificationManager.
+     */
     private void buildFirstNotification() {
         Intent mainActivityIntent = new Intent(this, MainActivity.class);
-        mainActivityIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent mainActivityPendingIntent = PendingIntent.getActivity(this, 0, mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        PendingIntent mainActivityPendingIntent = PendingIntent.getActivity(this, 0,
+                mainActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         Intent cancelTaskIntent = new Intent(this, MainActivity.class);
         cancelTaskIntent.setAction(CANCEL_TASK);
-        cancelTaskIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent cancelTaskPendingIntent = PendingIntent.getActivity(this, 0, cancelTaskIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        PendingIntent cancelTaskPendingIntent = PendingIntent.getActivity(this, 0,
+                cancelTaskIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
         if (mFirstCheckBox.isChecked()) {
             mFirstNotificationBuilder = new NotificationCompat.Builder(this);
             mFirstNotificationBuilder.setSmallIcon(R.drawable.number_one)
-                    .setContentTitle("first notification title")
                     .setPriority(NotificationCompat.PRIORITY_MIN)
                     .setOngoing(true)
-                    .setAutoCancel(true)
                     .setContentIntent(mainActivityPendingIntent)
-                    .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent)
-                    .setContentText("first notification content text.").build();
+                    .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent);
             mNotificationManager.notify(0, mFirstNotificationBuilder.build());
         } else {
             mFirstNotificationBuilder = new NotificationCompat.Builder(this);
             mFirstNotificationBuilder.setSmallIcon(R.drawable.number_one)
-                    .setContentTitle("first notification title")
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setOngoing(true)
-                    .setAutoCancel(true)
                     .setContentIntent(mainActivityPendingIntent)
-                    .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent)
-                    .setContentText("first notification content text.").build();
+                    .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent);
             mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             mNotificationManager.notify(FIRST_NOTIFICATION_ID, mFirstNotificationBuilder.build());
         }
     }
 
+    /**
+     * Change first Notification and Button depending on AsyncTask state.
+     */
     private void changeFirstNotificationAndButton() {
         if (mFirstNotificationTask != null && mFirstNotificationTask.isInProgress()) {
+            mFirstNotificationTask.setListener(this);
+            buildFirstNotification();
             mFirstCheckBox.setVisibility(View.INVISIBLE);
             mFirstButton.setText(getResources().getString(R.string.cancel));
             mFirstButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View v) {
+                public void onClick(View aView) {
                     mFirstNotificationTask.cancel(false);
+                    mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                     mNotificationManager.cancel(FIRST_NOTIFICATION_ID);
                 }
             });
@@ -156,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
             mFirstNotificationTask = new FirstNotificationTask(this);
             mFirstButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View v) {
+                public void onClick(View aView) {
                     mFirstNotificationTask.execute();
                     buildFirstNotification();
                 }
@@ -164,95 +199,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void changeSecondNotificationAndButton() {
-        if (mEditText.getText().toString().isEmpty()) {
-            mSecondButton.setEnabled(false);
-        } else {
-            mSecondButton.setEnabled(true);
-        }
-
-        mSecondButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                buildSecondNotification();
-            }
-        });
-    }
-
-    private void buildSecondNotification() {
-        Date currentTime = Calendar.getInstance().getTime();
-        SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.ENGLISH);
-        String targetString = sdf.format(currentTime.getTime()) + ": " + mEditText.getText();
-
-        mSecondNotificationContent.add(targetString);
-
-        Intent secondNotificationActivityIntent = new Intent(this, SecondNotificationActivity.class);
-        secondNotificationActivityIntent.putExtra(SECOND_NOTIFICATION_CONTENT, mSecondNotificationContent);
-        PendingIntent secondNotificationActivityPendingIntent = PendingIntent.getActivity(this, 0, secondNotificationActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        mSecondNotificationBuilder = new NotificationCompat.Builder(this);
-        if (mSecondCheckBox.isChecked()) {
-            mSecondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
-                    .setContentTitle("Last message")
-                    .setContentText(targetString)
-                    .setSmallIcon(R.drawable.number_two)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setNumber(++mSecondNotificationMessagesCounter)
-                    .setDefaults(Notification.DEFAULT_ALL);
-            mInboxStyle.setSummaryText("more below spoiler...");
-            mInboxStyle.addLine(targetString);
-            if (mSecondNotificationMessagesCounter > 1) {
-                mSecondNotificationBuilder.setStyle(mInboxStyle);
-            }
-        } else {
-            mSecondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
-                    .setContentTitle("Last message")
-                    .setContentText(targetString)
-                    .setSmallIcon(R.drawable.number_two)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    .setNumber(++mSecondNotificationMessagesCounter);
-            mInboxStyle.setSummaryText("more below spoiler...");
-            mInboxStyle.addLine(targetString);
-            if (mSecondNotificationMessagesCounter > 1) {
-                mSecondNotificationBuilder.setStyle(mInboxStyle);
-            }
-
-        }
-
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(SECOND_NOTIFICATION_ID, mSecondNotificationBuilder.build());
-    }
-
-
-    private void changeThirdNotificationAndButton() {
-        mThirdButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                buildThirdNotification();
-            }
-        });
-    }
-
-    private void buildThirdNotification() {
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.raw.kek);
-        mThirdNotificationBuilder = new NotificationCompat.Builder(this);
-        mThirdNotificationBuilder.setContentTitle("Third notification")
-                .setContentText("image")
-                .setSmallIcon(R.drawable.number_three)
-                .setLargeIcon(bitmap)
-                .setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigPicture(bitmap));
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(THIRD_NOTIFICATION_ID, mThirdNotificationBuilder.build());
-
-    }
-
-
+    /**
+     * AsyncTask for imitating work that represents in first Notification.
+     * Update progress bar in first Notification.
+     */
     private static class FirstNotificationTask extends AsyncTask<Void, Void, Void> {
         private boolean mInProgress;
         private WeakReference<MainActivity> mReference;
-        int mCounter;
+        private int mCounter;
+        private static final int WORK_DURATION = 10;
+        private static final int WORK_DELAY = 1000;
 
+
+        /**
+         * Constructor.
+         *
+         * @param aMainActivity reference to current Activity.
+         */
         FirstNotificationTask(MainActivity aMainActivity) {
             mReference = new WeakReference<>(aMainActivity);
         }
@@ -280,9 +243,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Void doInBackground(Void... aParams) {
             mCounter = 1;
-            while (mCounter < 10) {
+            while (mCounter < WORK_DURATION) {
                 if (isCancelled()) {
                     mInProgress = false;
                     break;
@@ -290,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
                 publishProgress();
                 mCounter++;
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(WORK_DELAY);
                 } catch (InterruptedException aE) {
                     aE.printStackTrace();
                 }
@@ -299,22 +262,166 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onProgressUpdate(Void... values) {
-            mReference.get().mFirstNotificationBuilder.setProgress(10, getCounter(), false);
-            mReference.get().mFirstNotificationBuilder.setContentText("Remaining time: " + String.valueOf(10 - getCounter()));
-            mReference.get().mNotificationManager.notify(FIRST_NOTIFICATION_ID, mReference.get().mFirstNotificationBuilder.build());
+        protected void onProgressUpdate(Void... aValues) {
+            mReference.get().mFirstNotificationBuilder
+                    .setContentText("Remaining time: " + String.valueOf(WORK_DURATION - getCounter()) + " sec")
+                    .setContentTitle(String.valueOf(getCounter() * WORK_DURATION) + "%: done")
+                    .setProgress(WORK_DURATION, getCounter(), false);
+            mReference.get().mNotificationManager.notify(FIRST_NOTIFICATION_ID,
+                    mReference.get().mFirstNotificationBuilder.build());
         }
 
+        /**
+         * Check if work in progress.
+         *
+         * @return work state.
+         */
         boolean isInProgress() {
             return mInProgress;
         }
 
+        /**
+         * Get progress counter.
+         *
+         * @return progress counter.
+         */
         int getCounter() {
             return mCounter;
         }
 
-        private void setlistener(MainActivity aMainActivity) {
-            mReference = new WeakReference<MainActivity>(aMainActivity);
+        /**
+         * Set new reference to Activity if previous was destroyed.
+         *
+         * @param aMainActivity current Activity reference.
+         */
+        private void setListener(MainActivity aMainActivity) {
+            mReference = new WeakReference<>(aMainActivity);
         }
+    }
+
+    /**
+     * Change second Button state depending on second CheckButton state.
+     */
+    private void changeSecondNotificationAndButton() {
+        if (mEditText.getText().toString().isEmpty()) {
+            mSecondButton.setEnabled(false);
+        } else {
+            mSecondButton.setEnabled(true);
+        }
+
+        mSecondButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View aView) {
+                buildSecondNotification();
+            }
+        });
+    }
+
+    /**
+     * Build second Notification depending on second CheckButton state.
+     * Set current time to messages, group it in InboxStyle Notification
+     * and add into ArrayList of Strings.
+     * Launch it by NotificationManager.
+     */
+    private void buildSecondNotification() {
+        Date currentTime = Calendar.getInstance().getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("h:mm:ss a", Locale.ENGLISH);
+        String targetString = sdf.format(currentTime.getTime()) + ": " + mEditText.getText();
+
+        mSecondNotificationContent.add(targetString);
+
+        Intent secondNotificationActivityIntent = new Intent(this, SecondNotificationActivity.class);
+        secondNotificationActivityIntent.putExtra(SECOND_NOTIFICATION_CONTENT, mSecondNotificationContent);
+        PendingIntent secondNotificationActivityPendingIntent = PendingIntent.getActivity(this, 0,
+                secondNotificationActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder secondNotificationBuilder = new NotificationCompat.Builder(this);
+        if (mSecondCheckBox.isChecked()) {
+            secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
+                    .setContentTitle("Last message")
+                    .setContentText(targetString)
+                    .setSmallIcon(R.drawable.number_two)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setNumber(++mSecondNotificationMessagesCounter)
+                    .setAutoCancel(true)
+                    .setDefaults(Notification.DEFAULT_ALL);
+            mInboxStyle.setSummaryText("more below spoiler...");
+            mInboxStyle.addLine(targetString);
+            if (mSecondNotificationMessagesCounter > 1) {
+                secondNotificationBuilder.setStyle(mInboxStyle);
+            }
+        } else {
+            secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
+                    .setContentTitle("Last message")
+                    .setContentText(targetString)
+                    .setSmallIcon(R.drawable.number_two)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .setNumber(++mSecondNotificationMessagesCounter);
+            mInboxStyle.setSummaryText("more below spoiler...");
+            mInboxStyle.addLine(targetString);
+            if (mSecondNotificationMessagesCounter > 1) {
+                secondNotificationBuilder.setStyle(mInboxStyle);
+            }
+
+        }
+
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(SECOND_NOTIFICATION_ID, secondNotificationBuilder.build());
+    }
+
+    /**
+     * Set third button onClickListener.
+     */
+    private void changeThirdNotificationAndButton() {
+        mThirdButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View aView) {
+                buildThirdNotification();
+            }
+        });
+    }
+
+    /**
+     * Build third Notification.
+     * Create Bitmap image and include it in BigPictureStyle Notification.
+     * Create Intent for sending included image through another applications
+     * which provides access for ACTION_SEND and image type Intent data.
+     */
+    private void buildThirdNotification() {
+        Intent sharePictureIntent = new Intent();
+        sharePictureIntent.setAction(Intent.ACTION_SEND);
+        sharePictureIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        Bitmap bitmap = BitmapFactory.decodeFile(mImage.getAbsolutePath());
+
+        Uri bitmapUri = FileProvider.getUriForFile(this,
+                "com.example.batrakov.notificationmanagertask.fileprovider", mImage);
+
+        sharePictureIntent.putExtra(Intent.EXTRA_STREAM, bitmapUri);
+        sharePictureIntent.setType("image/jpeg");
+
+        PendingIntent sharePicturePendingIntent = PendingIntent.getActivity(this, 0,
+                sharePictureIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        Intent closeIntent = new Intent();
+
+        PendingIntent closePendingIntent = PendingIntent.getActivity(this, 0,
+                closeIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+        NotificationCompat.Builder thirdNotificationBuilder = new NotificationCompat.Builder(this);
+        thirdNotificationBuilder.setContentTitle("Image")
+                .setContentText("(it can be expanded...)")
+                .setSmallIcon(R.drawable.number_three)
+                .setLargeIcon(bitmap)
+                .addAction(0, "Share", sharePicturePendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setContentIntent(closePendingIntent)
+                .setAutoCancel(true)
+                .setStyle(new NotificationCompat.BigPictureStyle()
+                        .setBigContentTitle("Incoming image:")
+                        .setSummaryText("(it can be squeezed...)")
+                        .bigLargeIcon(null)
+                        .bigPicture(bitmap));
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(THIRD_NOTIFICATION_ID, thirdNotificationBuilder.build());
     }
 }

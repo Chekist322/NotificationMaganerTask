@@ -13,33 +13,33 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 /**
+ * Second activity that provide list view for messages which income to second Notification;
  * Created by batrakov on 18.10.17.
  */
 
 public class SecondNotificationActivity extends AppCompatActivity {
 
-    ArrayList<String> mContent;
-    private RecyclerView mListView;
-    private ListAdapter mListAdapter;
-
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle aSavedInstanceState) {
         setContentView(R.layout.second_notification_activity);
-        super.onCreate(savedInstanceState);
+        super.onCreate(aSavedInstanceState);
 
         if (getIntent() != null) {
-            mContent = getIntent().getStringArrayListExtra(MainActivity.SECOND_NOTIFICATION_CONTENT);
-            if (mContent != null) {
-                mListView = (RecyclerView) findViewById(R.id.list);
-                mListAdapter = new ListAdapter(mContent);
-                mListView.setLayoutManager(new LinearLayoutManager(this));
-                mListView.setAdapter(mListAdapter);
-                mListAdapter.replaceData(mContent);
+            ArrayList<String> content = getIntent().getStringArrayListExtra(MainActivity.SECOND_NOTIFICATION_CONTENT);
+            if (content != null) {
+                RecyclerView listView = (RecyclerView) findViewById(R.id.list);
+                ListAdapter listAdapter = new ListAdapter(content);
+                listView.setLayoutManager(new LinearLayoutManager(this));
+                listView.setAdapter(listAdapter);
+                listAdapter.replaceData(content);
             }
         }
     }
 
 
+    /**
+     * Holder for RecyclerView. Contain single list element.
+     */
     private final class ListHolder extends RecyclerView.ViewHolder {
 
         private TextView mField;
@@ -62,6 +62,9 @@ public class SecondNotificationActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Adapter for recycler view. Allow to fill and update list.
+     */
     private class ListAdapter extends RecyclerView.Adapter<ListHolder> {
 
         private ArrayList<String> mList;
