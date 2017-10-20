@@ -56,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> mSecondNotificationContent;
     private FirstNotificationTask mFirstNotificationTask;
     private NotificationCompat.InboxStyle mInboxStyle;
+    private NotificationCompat.MessagingStyle mMessagingStyle;
     private int mSecondNotificationMessagesCounter;
 
     /**
@@ -93,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mInboxStyle = new NotificationCompat.InboxStyle();
+        mMessagingStyle = new NotificationCompat.MessagingStyle("Tosya");
         mSecondNotificationMessagesCounter = 0;
         mSecondNotificationContent = new ArrayList<>();
 
@@ -349,10 +351,6 @@ public class MainActivity extends AppCompatActivity {
         SimpleDateFormat sdf = new SimpleDateFormat("kk:mm:ss", Locale.ENGLISH);
         String targetString = sdf.format(currentTime.getTime()) + " " + mEditText.getText();
 
-        Spannable spannable = new SpannableString(targetString);
-        spannable.setSpan(new StyleSpan(android.graphics.Typeface.BOLD),
-                SPAN_FROM, SPAN_TO, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
         mSecondNotificationContent.add(targetString);
 
         Intent secondNotificationActivityIntent = new Intent(this, SecondNotificationActivity.class);
@@ -365,7 +363,6 @@ public class MainActivity extends AppCompatActivity {
         if (mSecondCheckBox.isChecked()) {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
                     .setContentTitle(getString(R.string.last_message))
-                    .setContentText(spannable)
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setNumber(++mSecondNotificationMessagesCounter)
@@ -375,21 +372,15 @@ public class MainActivity extends AppCompatActivity {
         } else {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
                     .setContentTitle(getString(R.string.last_message))
-                    .setContentText(spannable)
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                     .setNumber(++mSecondNotificationMessagesCounter);
         }
-
-        mInboxStyle.setBigContentTitle(getString(R.string.messages));
-        mInboxStyle.setSummaryText(getString(R.string.more_below_spoiler));
-        mInboxStyle.addLine(spannable);
-
-        if (mSecondNotificationMessagesCounter > 1) {
-            secondNotificationBuilder.setStyle(mInboxStyle);
-        }
+        mMessagingStyle.setConversationTitle(getString(R.string.messages));
+        mMessagingStyle.addMessage(mEditText.getText(), 0, sdf.format(currentTime.getTime()));
+        secondNotificationBuilder.setStyle(mMessagingStyle);
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(SECOND_NOTIFICATION_ID, secondNotificationBuilder.build());
