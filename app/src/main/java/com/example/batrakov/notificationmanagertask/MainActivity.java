@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Void... aValues) {
             mReference.get().mFirstNotificationBuilder
-                    .setContentTitle(mReference.get().getResources().getString(R.string.tesk_in_progress))
+                    .setContentTitle(mReference.get().getResources().getString(R.string.task_in_progress))
                     .setContentText(mReference.get().getResources().getString(R.string.remaining_time)
                             + String.valueOf(WORK_DURATION - getCounter()) + " sec")
                     .setSubText(String.valueOf(getCounter() * WORK_DURATION) + "%: done")
