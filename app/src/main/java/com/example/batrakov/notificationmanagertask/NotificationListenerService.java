@@ -13,10 +13,8 @@ import android.support.v4.app.NotificationCompat;
  * if there are not any other application Notification.
  * Created by batrakov on 19.10.17.
  */
-
 public class NotificationListenerService extends IntentService {
 
-    private int mFlagIfNotificationExist = 0;
     private static final int CHECK_DELAY = 400;
     private static final int REFERENCE_NOTIFICATION_ID = 4;
     /**
@@ -39,29 +37,34 @@ public class NotificationListenerService extends IntentService {
     protected void onHandleIntent(@Nullable Intent aIntent) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
             Intent mainActivityReferenceIntent = new Intent(getApplicationContext(), MainActivity.class);
             PendingIntent mainActivityReferencePendingIntent = PendingIntent.getActivity(getApplicationContext(),
                     0, mainActivityReferenceIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            NotificationCompat.Builder mainActivityReferenceNotificationBuilder =
+                    new NotificationCompat.Builder(getApplicationContext());
+            mainActivityReferenceNotificationBuilder.setAutoCancel(true)
+                    .setContentIntent(mainActivityReferencePendingIntent)
+                    .setContentTitle(getString(R.string.app_is_alive))
+                    .setContentText(getString(R.string.tap_to_open))
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .setSmallIcon(R.drawable.icon);
+
             while (true) {
                 try {
                     Thread.sleep(CHECK_DELAY);
                 } catch (InterruptedException aE) {
                     aE.printStackTrace();
                 }
-                if (manager.getActiveNotifications().length == mFlagIfNotificationExist) {
-                    NotificationCompat.Builder mainActivityReferenceNotification =
-                            new NotificationCompat.Builder(getApplicationContext());
-                    mainActivityReferenceNotification.setAutoCancel(true)
-                            .setContentIntent(mainActivityReferencePendingIntent)
-                            .setContentTitle(getString(R.string.app_is_alive))
-                            .setContentText(getString(R.string.tap_to_open))
-                            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                            .setSmallIcon(R.drawable.icon);
-                    manager.notify(REFERENCE_NOTIFICATION_ID, mainActivityReferenceNotification.build());
-                    mFlagIfNotificationExist = 1;
-                } else {
-                    manager.cancel(REFERENCE_NOTIFICATION_ID);
-                    mFlagIfNotificationExist = 0;
+                if (manager.getActiveNotifications().length == 0) {
+                    manager.notify(REFERENCE_NOTIFICATION_ID, mainActivityReferenceNotificationBuilder.build());
+                } else if (manager.getActiveNotifications().length > 1){
+                    for (int i = 0; i < manager.getActiveNotifications().length; i++) {
+                        if (manager.getActiveNotifications()[i].getId() == REFERENCE_NOTIFICATION_ID) {
+                            manager.cancel(REFERENCE_NOTIFICATION_ID);
+                        }
+                    }
                 }
             }
         }
