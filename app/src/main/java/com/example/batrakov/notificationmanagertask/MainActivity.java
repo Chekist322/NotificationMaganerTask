@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int THIRD_NOTIFICATION_ID = 2;
     private static final int PERMISSION_REQUEST_CODE = 3;
     private static final int COMPRESS_CONST = 100;
+    private static final int SPAN_FROM = 0;
+    private static final int SPAN_TO = 8;
 
     @Override
     protected void onCreate(Bundle aSavedInstanceState) {
@@ -119,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable aEditable) {
             }
         });
+
+        Intent listenerServiceIntent = new Intent(this, ServiceForForthNotification.class);
+        startService(listenerServiceIntent);
     }
 
     @Override
@@ -158,8 +163,6 @@ public class MainActivity extends AppCompatActivity {
                     .setOngoing(true)
                     .setContentIntent(mainActivityPendingIntent)
                     .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent);
-            mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(0, mFirstNotificationBuilder.build());
         } else {
             mFirstNotificationBuilder = new NotificationCompat.Builder(this);
             mFirstNotificationBuilder.setSmallIcon(R.drawable.number_one)
@@ -167,9 +170,9 @@ public class MainActivity extends AppCompatActivity {
                     .setOngoing(true)
                     .setContentIntent(mainActivityPendingIntent)
                     .addAction(0, getResources().getString(R.string.cancel), cancelTaskPendingIntent);
-            mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(FIRST_NOTIFICATION_ID, mFirstNotificationBuilder.build());
         }
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(FIRST_NOTIFICATION_ID, mFirstNotificationBuilder.build());
     }
 
     /**
@@ -179,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
         if (mFirstNotificationTask != null && mFirstNotificationTask.isInProgress()) {
             mFirstNotificationTask.setListener(this);
             buildFirstNotification();
-            mFirstCheckBox.setVisibility(View.INVISIBLE);
+            mFirstCheckBox.setEnabled(false);
             mFirstButton.setText(getResources().getString(R.string.cancel));
             mFirstButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -190,14 +193,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         } else {
-            mFirstCheckBox.setVisibility(View.VISIBLE);
+            mFirstCheckBox.setEnabled(true);
             mFirstButton.setText(getResources().getString(R.string.start));
             mFirstNotificationTask = new FirstNotificationTask(this);
             mFirstButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View aView) {
                     mFirstNotificationTask.execute();
-                    buildFirstNotification();
                 }
             });
         }
@@ -328,11 +330,13 @@ public class MainActivity extends AppCompatActivity {
      * Launch it by NotificationManager.
      */
     private void buildSecondNotification() {
+
         Date currentTime = Calendar.getInstance().getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("kk:mm:ss", Locale.ENGLISH);
         String targetString = sdf.format(currentTime.getTime()) + " " + mEditText.getText();
         Spannable spannable = new SpannableString(targetString);
-        spannable.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, 8, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannable.setSpan(new StyleSpan(android.graphics.Typeface.BOLD),
+                SPAN_FROM, SPAN_TO, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         mSecondNotificationContent.add(targetString);
         Intent secondNotificationActivityIntent = new Intent(this, SecondNotificationActivity.class);
@@ -349,13 +353,8 @@ public class MainActivity extends AppCompatActivity {
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setNumber(++mSecondNotificationMessagesCounter)
                     .setAutoCancel(true)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                     .setDefaults(Notification.DEFAULT_ALL);
-
-            mInboxStyle.setSummaryText("more below spoiler...");
-            mInboxStyle.addLine(spannable);
-            if (mSecondNotificationMessagesCounter > 1) {
-                secondNotificationBuilder.setStyle(mInboxStyle);
-            }
         } else {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
                     .setContentTitle("Last message")
@@ -363,15 +362,15 @@ public class MainActivity extends AppCompatActivity {
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                     .setNumber(++mSecondNotificationMessagesCounter);
-            mInboxStyle.setSummaryText("more below spoiler...");
-            mInboxStyle.addLine(spannable);
-            if (mSecondNotificationMessagesCounter > 1) {
-                secondNotificationBuilder.setStyle(mInboxStyle);
-            }
-
         }
-
+        mInboxStyle.setBigContentTitle("Messages:");
+        mInboxStyle.setSummaryText("more below spoiler...");
+        mInboxStyle.addLine(spannable);
+        if (mSecondNotificationMessagesCounter > 1) {
+            secondNotificationBuilder.setStyle(mInboxStyle);
+        }
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(SECOND_NOTIFICATION_ID, secondNotificationBuilder.build());
     }

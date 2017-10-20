@@ -24,6 +24,9 @@ import java.util.ArrayList;
 
 public class SecondNotificationActivity extends AppCompatActivity {
 
+    private static final int SPAN_FROM = 0;
+    private static final int SPAN_TO = 8;
+
     @Override
     protected void onCreate(@Nullable Bundle aSavedInstanceState) {
         setContentView(R.layout.second_notification_activity);
@@ -64,7 +67,7 @@ public class SecondNotificationActivity extends AppCompatActivity {
          */
         void bindView(String aStr) {
             Spannable spannable = new SpannableString(aStr);
-            spannable.setSpan(new StyleSpan(Typeface.BOLD), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spannable.setSpan(new StyleSpan(Typeface.BOLD), SPAN_FROM, SPAN_TO, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             mField.setText(spannable);
         }
     }
