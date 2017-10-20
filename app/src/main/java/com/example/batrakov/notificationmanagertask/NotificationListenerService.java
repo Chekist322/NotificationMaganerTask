@@ -14,7 +14,7 @@ import android.support.v4.app.NotificationCompat;
  * Created by batrakov on 19.10.17.
  */
 
-public class ServiceForForthNotification extends IntentService {
+public class NotificationListenerService extends IntentService {
 
     private int mFlagIfNotificationExist = 0;
     private static final int CHECK_DELAY = 400;
@@ -22,7 +22,7 @@ public class ServiceForForthNotification extends IntentService {
     /**
      * Constructor for defining service in manifest.
      */
-    public ServiceForForthNotification() {
+    public NotificationListenerService() {
         super("service");
     }
 
@@ -31,7 +31,7 @@ public class ServiceForForthNotification extends IntentService {
      *
      * @param aName Used to name the worker thread, important only for debugging.
      */
-    public ServiceForForthNotification(String aName) {
+    public NotificationListenerService(String aName) {
         super(aName);
     }
 
@@ -53,8 +53,8 @@ public class ServiceForForthNotification extends IntentService {
                             new NotificationCompat.Builder(getApplicationContext());
                     mainActivityReferenceNotification.setAutoCancel(true)
                             .setContentIntent(mainActivityReferencePendingIntent)
-                            .setContentTitle("Application is alive!")
-                            .setContentText("Tap to open...")
+                            .setContentTitle(getString(R.string.app_is_alive))
+                            .setContentText(getString(R.string.tap_to_open))
                             .setCategory(NotificationCompat.CATEGORY_SERVICE)
                             .setSmallIcon(R.drawable.icon);
                     manager.notify(REFERENCE_NOTIFICATION_ID, mainActivityReferenceNotification.build());

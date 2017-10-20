@@ -34,7 +34,7 @@
                 android:value=".MainActivity"/>
         </activity>
 
-        <service android:name=".ServiceForForthNotification">
+        <service android:name=".NotificationListenerService">
 
         </service>
     </application>

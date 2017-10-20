@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Intent listenerServiceIntent = new Intent(this, ServiceForForthNotification.class);
+        Intent listenerServiceIntent = new Intent(this, NotificationListenerService.class);
         startService(listenerServiceIntent);
     }
 
@@ -270,8 +270,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Void... aValues) {
             mReference.get().mFirstNotificationBuilder
-                    .setContentText("Remaining time: " + String.valueOf(WORK_DURATION - getCounter()) + " sec")
-                    .setContentTitle(String.valueOf(getCounter() * WORK_DURATION) + "%: done")
+                    .setContentTitle(mReference.get().getResources().getString(R.string.tesk_in_progress))
+                    .setContentText(mReference.get().getResources().getString(R.string.remaining_time)
+                            + String.valueOf(WORK_DURATION - getCounter()) + " sec")
+                    .setSubText(String.valueOf(getCounter() * WORK_DURATION) + "%: done")
                     .setProgress(WORK_DURATION, getCounter(), false);
             mReference.get().mNotificationManager.notify(FIRST_NOTIFICATION_ID,
                     mReference.get().mFirstNotificationBuilder.build());
@@ -347,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
         NotificationCompat.Builder secondNotificationBuilder = new NotificationCompat.Builder(this);
         if (mSecondCheckBox.isChecked()) {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
-                    .setContentTitle("Last message")
+                    .setContentTitle(getString(R.string.last_message))
                     .setContentText(spannable)
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -357,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
                     .setDefaults(Notification.DEFAULT_ALL);
         } else {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
-                    .setContentTitle("Last message")
+                    .setContentTitle(getString(R.string.last_message))
                     .setContentText(spannable)
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -365,8 +367,8 @@ public class MainActivity extends AppCompatActivity {
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                     .setNumber(++mSecondNotificationMessagesCounter);
         }
-        mInboxStyle.setBigContentTitle("Messages:");
-        mInboxStyle.setSummaryText("more below spoiler...");
+        mInboxStyle.setBigContentTitle(getString(R.string.messages));
+        mInboxStyle.setSummaryText(getString(R.string.more_below_spoiler));
         mInboxStyle.addLine(spannable);
         if (mSecondNotificationMessagesCounter > 1) {
             secondNotificationBuilder.setStyle(mInboxStyle);
@@ -414,16 +416,16 @@ public class MainActivity extends AppCompatActivity {
 
         NotificationCompat.Builder thirdNotificationBuilder = new NotificationCompat.Builder(this);
         thirdNotificationBuilder.setContentTitle("Image")
-                .setContentText("(it can be expanded...)")
+                .setContentText(getString(R.string.it_can_be_expanded))
                 .setSmallIcon(R.drawable.number_three)
                 .setLargeIcon(bitmap)
-                .addAction(0, "Share", sharePicturePendingIntent)
+                .addAction(0, getString(R.string.share), sharePicturePendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setContentIntent(closePendingIntent)
                 .setAutoCancel(true)
                 .setStyle(new NotificationCompat.BigPictureStyle()
-                        .setBigContentTitle("Incoming image:")
-                        .setSummaryText("(it can be squeezed...)")
+                        .setBigContentTitle(getString(R.string.incoming_message))
+                        .setSummaryText(getString(R.string.it_can_be_squeezed))
                         .bigLargeIcon(null)
                         .bigPicture(bitmap));
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
