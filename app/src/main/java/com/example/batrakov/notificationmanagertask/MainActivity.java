@@ -17,10 +17,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.text.Editable;
-import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.TextWatcher;
-import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -55,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
     private NotificationManager mNotificationManager;
     private ArrayList<String> mSecondNotificationContent;
     private FirstNotificationTask mFirstNotificationTask;
-    private NotificationCompat.InboxStyle mInboxStyle;
     private NotificationCompat.MessagingStyle mMessagingStyle;
     private int mSecondNotificationMessagesCounter;
 
@@ -70,8 +66,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int THIRD_NOTIFICATION_ID = 2;
     private static final int PERMISSION_REQUEST_CODE = 3;
     private static final int COMPRESS_CONST = 100;
-    private static final int SPAN_FROM = 0;
-    private static final int SPAN_TO = 8;
 
     @Override
     protected void onCreate(Bundle aSavedInstanceState) {
@@ -93,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        mInboxStyle = new NotificationCompat.InboxStyle();
         mMessagingStyle = new NotificationCompat.MessagingStyle("Tosya");
         mSecondNotificationMessagesCounter = 0;
         mSecondNotificationContent = new ArrayList<>();
@@ -349,8 +342,8 @@ public class MainActivity extends AppCompatActivity {
 
         Date currentTime = Calendar.getInstance().getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("kk:mm:ss", Locale.ENGLISH);
-        String targetString = sdf.format(currentTime.getTime()) + " " + mEditText.getText();
 
+        String targetString = sdf.format(currentTime.getTime()) + " " + mEditText.getText();
         mSecondNotificationContent.add(targetString);
 
         Intent secondNotificationActivityIntent = new Intent(this, SecondNotificationActivity.class);
@@ -362,7 +355,6 @@ public class MainActivity extends AppCompatActivity {
         NotificationCompat.Builder secondNotificationBuilder = new NotificationCompat.Builder(this);
         if (mSecondCheckBox.isChecked()) {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
-                    .setContentTitle(getString(R.string.last_message))
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setNumber(++mSecondNotificationMessagesCounter)
@@ -371,7 +363,6 @@ public class MainActivity extends AppCompatActivity {
                     .setDefaults(Notification.DEFAULT_ALL);
         } else {
             secondNotificationBuilder.setContentIntent(secondNotificationActivityPendingIntent)
-                    .setContentTitle(getString(R.string.last_message))
                     .setSmallIcon(R.drawable.number_two)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
